@@ -122,6 +122,7 @@ import static com.facebook.presto.iceberg.IcebergUtil.isIcebergTable;
 import static com.facebook.presto.iceberg.IcebergUtil.populateTableProperties;
 import static com.facebook.presto.iceberg.IcebergUtil.toHiveColumns;
 import static com.facebook.presto.iceberg.IcebergUtil.tryGetProperties;
+import static com.facebook.presto.iceberg.IcebergUtil.verifyTypeSupported;
 import static com.facebook.presto.iceberg.PartitionFields.parsePartitionFields;
 import static com.facebook.presto.iceberg.util.StatisticsUtil.calculateAndSetTableSize;
 import static com.facebook.presto.iceberg.util.StatisticsUtil.mergeHiveStatistics;
@@ -129,6 +130,7 @@ import static com.facebook.presto.spi.StandardErrorCode.INVALID_SCHEMA_PROPERTY;
 import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
 import static com.facebook.presto.spi.StandardErrorCode.SCHEMA_NOT_EMPTY;
 import static com.facebook.presto.spi.security.PrincipalType.USER;
+import static com.facebook.presto.spi.statistics.SourceInfo.ConfidenceLevel.LOW;
 import static com.facebook.presto.spi.statistics.TableStatisticType.ROW_COUNT;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -268,6 +270,8 @@ public class IcebergHiveMetadata
 
         Schema schema = toIcebergSchema(tableMetadata.getColumns());
 
+        verifyTypeSupported(schema);
+
         PartitionSpec partitionSpec = parsePartitionFields(schema, getPartitioning(tableMetadata.getProperties()));
 
         MetastoreContext metastoreContext = getMetastoreContext(session);
@@ -301,7 +305,7 @@ public class IcebergHiveMetadata
         }
 
         FileFormat fileFormat = getFileFormat(tableMetadata.getProperties());
-        TableMetadata metadata = newTableMetadata(schema, partitionSpec, targetPath, populateTableProperties(tableMetadata, fileFormat));
+        TableMetadata metadata = newTableMetadata(schema, partitionSpec, targetPath, populateTableProperties(tableMetadata, fileFormat, session));
         transaction = createTableTransaction(tableName, operations, metadata);
 
         return new IcebergWritableTableHandle(
@@ -471,7 +475,7 @@ public class IcebergHiveMetadata
                 }
             }
             return filterStatsCalculatorService.filterStats(
-                    calculateAndSetTableSize(filteredStatsBuilder).build(),
+                    calculateAndSetTableSize(filteredStatsBuilder).setConfidenceLevel(LOW).build(),
                     translatedPredicate,
                     session,
                     columnHandles.stream().map(IcebergColumnHandle.class::cast).collect(toImmutableMap(

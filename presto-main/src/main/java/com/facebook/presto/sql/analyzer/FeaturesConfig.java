@@ -309,6 +309,10 @@ public class FeaturesConfig
     private boolean generateDomainFilters;
     private boolean printEstimatedStatsFromCache;
     private CreateView.Security defaultViewSecurityMode = DEFINER;
+    private boolean useHistograms;
+
+    private boolean useNewNanDefinition = true;
+    private boolean warnOnPossibleNans;
 
     public enum PartitioningPrecisionStrategy
     {
@@ -3101,6 +3105,45 @@ public class FeaturesConfig
     public FeaturesConfig setPrintEstimatedStatsFromCache(boolean printEstimatedStatsFromCache)
     {
         this.printEstimatedStatsFromCache = printEstimatedStatsFromCache;
+        return this;
+    }
+
+    public boolean isUseHistograms()
+    {
+        return useHistograms;
+    }
+
+    @Config("optimizer.use-histograms")
+    @ConfigDescription("Use histogram statistics in cost-based calculations in the optimizer")
+    public FeaturesConfig setUseHistograms(boolean useHistograms)
+    {
+        this.useHistograms = useHistograms;
+        return this;
+    }
+
+    public boolean getUseNewNanDefinition()
+    {
+        return useNewNanDefinition;
+    }
+
+    @Config("use-new-nan-definition")
+    @ConfigDescription("Enable functions to use the new consistent NaN definition where NaN=NaN and is sorted largest")
+    public FeaturesConfig setUseNewNanDefinition(boolean useNewNanDefinition)
+    {
+        this.useNewNanDefinition = useNewNanDefinition;
+        return this;
+    }
+
+    public boolean getWarnOnCommonNanPatterns()
+    {
+        return warnOnPossibleNans;
+    }
+
+    @Config("warn-on-common-nan-patterns")
+    @ConfigDescription("Give warnings for operations on DOUBLE/REAL types where NaN issues are common")
+    public FeaturesConfig setWarnOnCommonNanPatterns(boolean warnOnPossibleNans)
+    {
+        this.warnOnPossibleNans = warnOnPossibleNans;
         return this;
     }
 }
